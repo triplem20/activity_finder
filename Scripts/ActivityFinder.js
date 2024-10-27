@@ -139,7 +139,7 @@ function fetchActivities(lat, lng, type) {
         method: 'GET',
         headers: {
             'Accept': 'application/json',
-            'Authorization': 'fsq3RXOtK8AviEExxN8VGncz3prjLBomD5itI1dxi89dETs=' // Replace with your Foursquare API Key
+            'Authorization': '//'
         }
     })
     .then(response => {
