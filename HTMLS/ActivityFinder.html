@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activity Finder</title>
+    <link rel="stylesheet" href="../Stylesheets/ActivityFinder.css">
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <!-- Leaflet Routing Machine CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
+</head>
+<body>
+
+    <div class="appbar">
+        <h1>Activity Finder <img class="headicon" src="../images/activityfinder.png"></h1>
+        <button class="profile" title="account"><img src="../images/personicon.png"></button>
+      </div>
+
+<div class="container">
+
+   
+    <div id="map">
+        <div class="Search">
+            <input type="text" id="mapSearchInput" placeholder="Search for a location">
+            <button type="button" id="mapSearchBtn">Search</button>
+        </div>
+        <div class="filter-section">
+            <label>Restaurants</label>
+            <button title="Restaurants" id="restaurantsFilter"><img src="../images/resturanticon.png"></button>
+            <label>Sports</label>
+            <button title="Sports" id="sportsFilter"><img src="../images/sportsicon.png"></button>
+            <label>Other Activities</label>
+            <button title="Events" id="eventsFilter"><img src="../images/eventsicon.png"></button>
+        </div>
+        <button id="addActivityBtn"><img src="../images/addlocation.png">Add Activity</button>
+        <button title="Locate Me" id="locate-btn"><img src="../images/locationicon.png"></button>
+
+        <div class="filter-mood">
+          <div class="dropdown">
+            <input type="checkbox" id="dropdown">
+          
+            <label class="dropdown__face" for="dropdown">
+              <div class="dropdown__text">Mood</div>
+          
+              <div class="dropdown__arrow"></div>
+            </label>
+          
+            <ul class="dropdown__items">
+            
+              <li title="Adventurous" data-type="adventure">🧗 </li>
+              <li title="Relaxed" data-type="relax">🌅 </li>
+              <li title="Creative" data-type="creative">🎨 </li>
+              <li title="Social/Romantic" data-type="social">🍻 </li>
+              <li title="Smart" data-type="libary">📚 </li>
+              <li title="Nature/Festive" data-type="nature">🌳 </li>
+            
+              
+            </ul>
+          </div>
+          
+          <svg>
+            <filter id="goo">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur" />
+              <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7" result="goo" />
+              <feBlend in="SourceGraphic" in2="goo" />
+            </filter>
+          </svg>
+      </div>
+
+    </div>
+
+    <div class="sidebar">
+        <div id="activityFormModal" class="modal">
+            <span class="close">&times;</span>
+            <div class="modal-content container">
+              
+              <h3 id="modal-title">Add New Activity</h3>
+              <form id="activityForm">
+                <div class="row">
+                  <div class="col-25">
+                    <label for="activityName">Activity Name:</label>
+                  </div>
+                  <div class="col-75">
+                    <input type="text" id="activityName" placeholder="Activity Name" required>
+                  </div>
+                </div>
+          
+                <div class="row">
+                  <div class="col-25">
+                    <label for="activityLocation">Location:</label>
+                  </div>
+                  <div class="col-75">
+                    
+                    <input type="text" id="activityLocation" placeholder="Enter address or lat,lng" required> <button type="button" id="pickLocationBtn">Pick on Map</button> 
+                    
+                </div>
+                </div>
+          
+               
+          
+                <div class="row">
+                  <div class="col-25">
+                    <label for="activityType">Activity Type:</label>
+                  </div>
+                  <div class="col-75">
+                    <select id="activityType" required>
+                      <option value="restaurant">Restaurant</option>
+                      <option value="sports">Sports</option>
+                      <option value="event">Event</option>
+                      <option value="marathon">Marathon</option>
+                    </select>
+                  </div>
+                </div>
+          
+                <div id="marathonPoints" style="display: none;">
+                  <div class="row">
+                    <div class="col-25">
+                      <label for="startLocation">Start Location:</label>
+                    </div>
+                    <div class="col-75">
+                      <input type="text" id="startLocation" placeholder="Enter start address or coordinates">
+                      <button type="button" id="pickStartBtn">Pick Start on Map</button>
+                    </div>
+                  </div>
+          
+                  <div class="row">
+                    <div class="col-25">
+                      <label for="endLocation">End Location:</label>
+                    </div>
+                    <div class="col-75">
+                      <input type="text" id="endLocation" placeholder="Enter end address or coordinates">
+                      <button type="button" id="pickEndBtn">Pick End on Map</button>
+                    </div>
+                  </div>
+                </div>
+          
+                <div class="row">
+                  <input type="submit" id="addActivity" value="Add Activity" class="addActivity">
+                </div>
+              </form>
+            </div>
+          </div>
+          
+        
+        
+        </div>
+
+       
+
+
+        <h5 class="NearbyA">Nearby Avtivities</h5>
+        <div class="activity-list" id="activityList">
+         
+          <!-- <h3 class="activitylistheader">Nearby Activities</h3> -->
+          
+            <!-- Activities will be listed here dynamically -->
+        </div>
+    </div>
+
+</div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+<script src="../Scripts/ActivityFinder.js"></script>
+
+</body>
+</html>
