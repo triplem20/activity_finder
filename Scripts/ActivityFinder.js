@@ -132,7 +132,7 @@ let markers = [];
 
 // Function to fetch activities based on type (food, parks, etc.)
 function fetchActivities(lat, lng, type) {
-    const limit = 20; // Number of results to fetch
+    const limit = 20; 
     const apiUrl = `https://api.foursquare.com/v3/places/search?ll=${lat},${lng}&query=${type}&limit=${limit}`;
 
     fetch(apiUrl, {
@@ -149,10 +149,10 @@ function fetchActivities(lat, lng, type) {
         return response.json();
     })
     .then(data => {
-        console.log(data); // Inspect the response structure
-        const activities = data.results || []; // Ensure this matches the API response structure
+        console.log(data); 
+        const activities = data.results || []; //  API response structure
         if (activities.length > 1) {
-            displayActivities(activities, type); // Pass all activities to display
+            displayActivities(activities, type); 
         } else {
             console.warn("Only one or no activities found.");
         }
@@ -164,8 +164,8 @@ function fetchActivities(lat, lng, type) {
    // Get mood elements and attach click event listeners
 document.querySelectorAll('li[data-type]').forEach(mood => {
     mood.addEventListener('click', () => {
-        const type = mood.getAttribute('data-type'); // Get the mood type
-        const userLat = marker.getLatLng().lat; // Assuming `marker` is the user's location marker
+        const type = mood.getAttribute('data-type'); 
+        const userLat = marker.getLatLng().lat; 
         const userLng = marker.getLatLng().lng;
         
         fetchActivities(userLat, userLng, type); // Fetch activities based on selected mood type
@@ -229,7 +229,7 @@ function displayActivities(activities, type) {
 
 function updateActivityList(activities, userLat, userLng, type) {
     const activityList = document.getElementById("activityList");
-    activityList.innerHTML = ""; // Clear existing items
+    activityList.innerHTML = ""; 
 
     activities.forEach(activity => {
         const name = activity.name || 'Unknown';
@@ -239,7 +239,7 @@ function updateActivityList(activities, userLat, userLng, type) {
         const distance = calculateDistance(userLat, userLng, lat, lng).toFixed(2);
         const rating = (Math.random() * (5 - 3) + 3).toFixed(1);
 
-        // Choose icon based on type
+        
         const iconType = 
             type === "restaurant" ? restaurantIcon :
             type === "sports" ? sportsIcon :
@@ -251,7 +251,7 @@ function updateActivityList(activities, userLat, userLng, type) {
             type === "energetic" ? energeticIcon :
             type === "libary" ? intellectualPlayfulIcon :
             type === "nature" ? natureFestiveIcon :
-            defaultActivityIcon; // Fallback icon for any unrecognized type
+            defaultActivityIcon; 
         
         const activityImage = iconType.options.iconUrl;
 
@@ -293,7 +293,7 @@ function updateActivityList(activities, userLat, userLng, type) {
 
 //  (Haversine formula)
 function calculateDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371; // Radius of the Earth in km
+    const R = 6371; 
     const dLat = (lat2 - lat1) * (Math.PI / 180);
     const dLon = (lon2 - lon1) * (Math.PI / 180);
     const a = 
@@ -316,7 +316,7 @@ function clearMarkers() {
 
 // Function to draw route using Leaflet Routing Machine
 function drawRoute(start, end) {
-    // Clear existing routes
+  
     if (routingControl) {
         map.removeControl(routingControl);
     }
@@ -365,7 +365,7 @@ document.getElementById('addActivityBtn').addEventListener('click', function() {
     document.getElementById('activityFormModal').style.display = 'block';
 });
 
-// Close the modal
+
 document.querySelector('.close').onclick = function() {
     document.getElementById('activityFormModal').style.display = 'none';
 };
@@ -500,7 +500,7 @@ document.getElementById('mapSearchBtn').addEventListener('click', function() {
                     const lat = data[0].lat;
                     const lng = data[0].lon;
 
-                    // Move map view to the new location
+                    
                     map.setView([lat, lng], 14);
                     
                     // Add marker for the searched location
@@ -527,7 +527,7 @@ function applyFilter(type) {
     const userLat = marker.getLatLng().lat;
     const userLng = marker.getLatLng().lng;
 
-    // Clear all markers from the map
+    
     clearMarkers();
 
     // Fetch new activities based on the selected filter type
@@ -545,7 +545,7 @@ function displayActivitiesOnMap(activities) {
 
 
 locateUser();
-// Event listener for 'Locate Me' button
+
 document.getElementById("locate-btn").addEventListener("click", locateUser);
 
 
