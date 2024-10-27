@@ -345,43 +345,7 @@ function drawRoute(start, end) {
       
     });
 }
-// async function drawRoute(start, end) {
-//     // Clear existing routes
-//     if (routingControl) {
-//         map.removeControl(routingControl);
-//     }
 
-//     const apiKey = '5b3ce3597851110001cf6248feeb5147c7b543d29b2129261571e583'; 
-
-//     // Construct the API URL
-//     const url = `https://api.openrouteservice.org/v2/directions/driving-car?api_key=${apiKey}&start=${start.lng},${start.lat}&end=${end.lng},${end.lat}`;
-
-//     try {
-//         const response = await fetch(url);
-
-//         // Check if the response is ok
-//         if (!response.ok) {
-//             throw new Error(`Error: ${response.status} - ${response.statusText}`);
-//         }
-
-//         const data = await response.json();
-
-//         // Check if the API returned any features
-//         if (!data.features || data.features.length === 0) {
-//             throw new Error('No routes found');
-//         }
-
-//         const coordinates = data.features[0].geometry.coordinates;
-//         const latlngs = coordinates.map(coord => [coord[1], coord[0]]); // Convert [lng, lat] to [lat, lng] for Leaflet
-
-//         // Draw polyline on the map
-//         const route = L.polyline(latlngs, { color: 'blue' }).addTo(map);
-//         map.fitBounds(route.getBounds());
-
-//     } catch (error) {
-//         console.error("Error fetching route from OpenRouteService:", error);
-//     }
-// }
 
 
 
