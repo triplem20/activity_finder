@@ -6,46 +6,32 @@
     <title>Activity Finder</title>
     <link rel="stylesheet" href="../Stylesheets/login.css">
     <link href='https://fonts.googleapis.com/css?family=Montserrat:700' rel='stylesheet' type='text/css'>
-
-    
-   
-
 </head>
 <body>
-
-    
-
-    
     <main>
         <figure>
-          <picture>
-           <img src="../images/activityfinder.png">
-          </picture>
+            <picture>
+                <img src="../images/activityfinder.png" alt="Activity Finder Logo">
+            </picture>
         </figure>
         <div class="headline">
-          <h2 class="text-headline">Activity Finder</h2>
-          <h3 class="text-subheadline">Login</h2>
+            <h2 class="text-headline">Activity Finder</h2>
+            <h3 class="text-subheadline">Login</h3>
         </div>
-        <form>
-          
-          <span>
-            <label for="email" class="text-small-uppercase">Email</label>
-            <input class="text-body" id="email" name="email" type="email" required>
-          </span>
-          <span>
-            <label for="city" class="text-small-uppercase">Password</label>
-            <input class="text-body" id="city" name="city" type="password" required>
-          </span>
-          
-            
-          <input class="text-small-uppercase" id="submit" type="submit" value="Login">
-          <a class="forgot" href="#">Forgot Password?</a>
-            <a class="register" href="../Activiytyfinder/HTMLS/registerpage.html">Register</a>
-      
+        <form id="loginForm">
+            <span>
+                <label for="lemail" class="text-small-uppercase">Email</label>
+                <input class="text-body" id="lemail" type="email" required>
+            </span>
+            <span>
+                <label for="lpassword" class="text-small-uppercase">Password</label>
+                <input class="text-body" id="lpassword" type="password" required>
+            </span>
+            <input class="text-small-uppercase" id="submit" type="submit" value="Login">
+            <a class="forgot" href="#">Forgot Password?</a>
+            <a class="register" href="../HTMLS/registerpage.html">Register</a>
         </form>
-      </main>
-      
-
-
+    </main>
+    <script type="module" src="../Scripts/firebase.js"></script>
 </body>
 </html>

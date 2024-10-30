@@ -274,6 +274,12 @@ img {
   background: #ffffff;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+  
 }
 
 .user-details-card figure {
@@ -323,7 +329,7 @@ span {
 }
 
 .edit-button {
-  width: 100%;
+  width: 150px;
   padding: 15px;
   background-color: #071011;
   color: #ffffff;
@@ -340,10 +346,28 @@ span {
 .edit-button:hover {
   background-color: #333;
 }
+
+form {
+  display: flex;
+  flex-direction: column; 
+  width: 80%;
+  margin: 0 auto; 
+}
+
+.clearfix::after {
+  content: "";
+  clear: both;
+  display: table;
+}
+
+
+/*appbar*/
+
+
 .appbar {
   display: flex;
   align-items: center;
-  justify-content: center; 
+  justify-content: space-between; 
   background-color: #5468ff; 
   padding: 10px 20px;
   position: sticky; 
@@ -370,11 +394,12 @@ span {
   margin-left: 10px; 
 }
 
-.appbar .profile {
+.appbar button {
+  font-weight: bold;
+  font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
   width: 50px;
   height: 50px;
-  background-color: white;
-  border-radius: 50%; 
+  border-radius: 10%; 
   border: none;
   cursor: pointer;
   display: flex;
@@ -383,10 +408,10 @@ span {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-.appbar .profile img {
-  width: 30px;
-  height: 30px;
+.appbar button:hover{
+  background-color: #777;
 }
+
 .appbar a{
   text-decoration: none;
 }

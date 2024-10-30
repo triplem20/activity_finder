@@ -240,8 +240,9 @@ input[type=submit]:hover {
 
    font-family: 'Times New Roman', Times, serif;
     margin-top: 0px;
-    color: #fefefe;
-    background: radial-gradient(100% 100% at 100% 0, #5adaff 0, #5468ff 100%);
+    color:#312c2c;
+    background-image: url("../images/activityfinder.png");
+    background-size:cover;
     padding: 20px;
     border-radius: 10px;
     margin-right: 10px;

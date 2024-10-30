@@ -8,7 +8,7 @@
     <link href='https://fonts.googleapis.com/css?family=Montserrat:700' rel='stylesheet' type='text/css'>
 
     
-   
+
 
 </head>
 <body>
@@ -26,7 +26,7 @@
           <h2 class="text-headline">Activity Finder</h2>
           <h3 class="text-subheadline">Register</h2>
         </div>
-        <form>
+        <form id="registerForm" >
           <span>
             <label for="username" class="text-small-uppercase">Username</label>
             <input class="text-body" id="username" name="username" type="text" required>
@@ -39,22 +39,23 @@
             <label for="password" class="text-small-uppercase">Password</label>
             <input class="text-body" id="password"  type="password" required>
         </span>
-        <span>
+        <!-- <span>
             <label for="confirm-password" class="text-small-uppercase">Re-Enter Password</label>
             <input class="text-body" id="confirm-password" name="confirm-password" type="password" required>
-        </span>
+        </span> -->
         
             
           <input class="text-small-uppercase" id="submit" type="submit" value="Register">
           
-          <a class="login" href="../Activityfinder/login.html">login</a>
+          <a class="login" href="../HTMLS/login.html">login</a>
 
       
         </form>
       </main>
 
       
-      
+      <script type="module" src="../Scripts/firebase.js"></script>
+
 
 
 </body>
