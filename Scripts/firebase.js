@@ -21,11 +21,11 @@
             auth.onAuthStateChanged((user) => {
                 if (user) {
                     console.log("User is signed in:", user);
-                    setupUserDetails(user.uid); // Call function to get user details
+                    setupUserDetails(user.uid); 
                 } else {
                     console.log("No user is signed in.");
-                    // Redirect to login page or show guest details
-                    window.location.href = "../HTMLS/login.html"; // Redirect to login if not signed in
+                    
+                    window.location.href = "../HTMLS/login.html";
                 }
             });
         
@@ -129,19 +129,19 @@
         };
         function setupUserDetails(userId) {
             const db = getDatabase();
-            const userRef = ref(db, 'users/' + userId); // Reference to the user's data
+            const userRef = ref(db, 'users/' + userId); 
         
             get(userRef).then((snapshot) => {
                 if (snapshot.exists()) {
-                    const userData = snapshot.val(); // Get the data from the snapshot
+                    const userData = snapshot.val(); 
         
-                    // Set the user details in the HTML
+                    
                     const usernameDisplay = document.getElementById('usernameDisplay');
                     const userEmail = document.getElementById('userEmaild');
                     const userName = document.getElementById('userNamed');
                     const userCity = document.getElementById('userCity');
         
-                    // Display the user details
+                    
                     usernameDisplay.innerText = `Welcome, ${userData.userName || user.email}!`;
                     userEmail.innerText = userData.email; 
                     userName.innerText = userData.userName || 'Not specified'; 
