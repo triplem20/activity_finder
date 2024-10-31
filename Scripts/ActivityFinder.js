@@ -121,25 +121,66 @@ function locateUser(activityType = "restaurant") {
         circle = L.circle([lat, lng], { radius: accuracy }).addTo(map);
         map.setView([lat, lng], 14);
 
+        // Display the city name based on location
+        getCityFromCoordinates(lat, lng);
+
         // Fetch nearby activities based on the selected activity type
         fetchActivities(lat, lng, activityType);
     }, function (err) {
         alert("Could not get your location.");
     });
 }
+function getCityFromCoordinates(lat, lng) {
+    const geocodeUrl = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`;
+
+    fetch(geocodeUrl)
+        .then(response => response.json())
+        .then(data => {
+            if (data && data.address && data.address.city) {
+                const cityName = data.address.city;
+                displayCityName(cityName);
+                saveCityToFirebase(cityName);  
+                console.log("City found:", cityName);// Save city to Firebase
+            } else {
+                console.log("City not found for the location.");
+            }
+        })
+        .catch(error => console.error("Geocoding error:", error));
+}
+
+function saveCityToFirebase(city) {
+    const user = auth.currentUser;
+    if (user) {
+        const userRef = ref(database, 'users/' + user.uid);
+        update(userRef, { city: city })
+            .then(() => console.log("City updated in Firebase"))
+            .catch(error => console.error("Error updating city:", error));
+    }
+}
+
+
+function displayCityName(city) {
+    const cityElement = document.getElementById("cityName");
+    console.log("Displaying city:", city);
+    if (cityElement) {
+        cityElement.textContent = `City: ${city}`;
+    } else {
+        console.warn("City name element not found.");
+    }
+}
 
 let markers = [];
 
 // Function to fetch activities based on type (food, parks, etc.)
 function fetchActivities(lat, lng, type) {
-    const limit = 20; 
+    const limit = 20; // Number of results to fetch
     const apiUrl = `https://api.foursquare.com/v3/places/search?ll=${lat},${lng}&query=${type}&limit=${limit}`;
 
     fetch(apiUrl, {
         method: 'GET',
         headers: {
             'Accept': 'application/json',
-            'Authorization': '//'
+            'Authorization': 'fsq3RXOtK8AviEExxN8VGncz3prjLBomD5itI1dxi89dETs=' // Foursquare API Key
         }
     })
     .then(response => {
@@ -149,8 +190,8 @@ function fetchActivities(lat, lng, type) {
         return response.json();
     })
     .then(data => {
-        console.log(data); 
-        const activities = data.results || []; //  API response structure
+        console.log(data); // Inspect the response structure
+        const activities = data.results || []; // API response structure
         if (activities.length > 1) {
             displayActivities(activities, type); 
         } else {
@@ -164,11 +205,11 @@ function fetchActivities(lat, lng, type) {
    // Get mood elements and attach click event listeners
 document.querySelectorAll('li[data-type]').forEach(mood => {
     mood.addEventListener('click', () => {
-        const type = mood.getAttribute('data-type'); 
-        const userLat = marker.getLatLng().lat; 
+        const type = mood.getAttribute('data-type'); // Get the mood type
+        const userLat = marker.getLatLng().lat;
         const userLng = marker.getLatLng().lng;
         
-        fetchActivities(userLat, userLng, type); // Fetch activities based on selected mood type
+        fetchActivities(userLat, userLng, type); 
     });
 });
 
@@ -239,7 +280,7 @@ function updateActivityList(activities, userLat, userLng, type) {
         const distance = calculateDistance(userLat, userLng, lat, lng).toFixed(2);
         const rating = (Math.random() * (5 - 3) + 3).toFixed(1);
 
-        
+        // Choose icon based on type
         const iconType = 
             type === "restaurant" ? restaurantIcon :
             type === "sports" ? sportsIcon :
@@ -293,7 +334,7 @@ function updateActivityList(activities, userLat, userLng, type) {
 
 //  (Haversine formula)
 function calculateDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371; 
+    const R = 6371; // Radius of the Earth in km
     const dLat = (lat2 - lat1) * (Math.PI / 180);
     const dLon = (lon2 - lon1) * (Math.PI / 180);
     const a = 
@@ -316,7 +357,7 @@ function clearMarkers() {
 
 // Function to draw route using Leaflet Routing Machine
 function drawRoute(start, end) {
-  
+    
     if (routingControl) {
         map.removeControl(routingControl);
     }
@@ -330,15 +371,15 @@ function drawRoute(start, end) {
         routeWhileDragging: true,
         createMarker: function() { return null; }, // Disable default markers
         router: L.Routing.osrmv1({
-            serviceUrl: 'http://router.project-osrm.org/route/v1',
-            
-            timeout: 10000 // Set timeout to 10 seconds
+            serviceUrl: 'https://router.project-osrm.org/route/v1',
+            timeout: 10000 
+    
         }),
         showAlternatives: true,
         addWaypoints: false
     }).addTo(map);
 
-    // Listen for clicks outside the routing container
+   
     document.addEventListener('click', function (event) {
         const routingContainer = document.querySelector('.leaflet-routing-container');
         
@@ -360,12 +401,12 @@ document.getElementById('activityType').addEventListener('change', function() {
     }
 });
 
-// Show the modal when the "Add Activity" button is clicked
+
 document.getElementById('addActivityBtn').addEventListener('click', function() {
     document.getElementById('activityFormModal').style.display = 'block';
 });
 
-
+// Close the modal
 document.querySelector('.close').onclick = function() {
     document.getElementById('activityFormModal').style.display = 'none';
 };
@@ -470,7 +511,7 @@ function geocodeAndAddToMap(location, name, icon, type) {
 
 
 function removeUserActivity(marker) {
-    // Remove the marker from the map
+    
     map.removeLayer(marker);
 
     // Find the index of the marker in activityMarkers array
@@ -481,7 +522,7 @@ function removeUserActivity(marker) {
     }
 
     
-    // Close the popup to avoid dangling reference
+  
     marker.closePopup();
 }
 
@@ -500,7 +541,7 @@ document.getElementById('mapSearchBtn').addEventListener('click', function() {
                     const lat = data[0].lat;
                     const lng = data[0].lon;
 
-                    
+                    // Move map view to the new location
                     map.setView([lat, lng], 14);
                     
                     // Add marker for the searched location
@@ -508,7 +549,7 @@ document.getElementById('mapSearchBtn').addEventListener('click', function() {
                         .bindPopup(`<strong>${data[0].display_name}</strong>`)
                         .openPopup();
 
-                    // Fetch activities near the searched location
+                  
                     fetchActivities(lat, lng, "restaurant"); 
                 } else {
                     alert("Location not found");
@@ -527,10 +568,10 @@ function applyFilter(type) {
     const userLat = marker.getLatLng().lat;
     const userLng = marker.getLatLng().lng;
 
-    
+   
     clearMarkers();
 
-    // Fetch new activities based on the selected filter type
+ 
     fetchActivities(userLat, userLng, type);
 }
 
