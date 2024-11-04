@@ -8,7 +8,7 @@ body {
     margin: 0;
     padding: 0;
     background-image:url("../images/background.jpg") ;
-    background-size:auto;
+    background-size:cover;
 }
 
 
@@ -22,6 +22,7 @@ img{
     padding: 20px;
     width: 100%;
     box-sizing: border-box;
+    background-color: transparent;
     
 }
 

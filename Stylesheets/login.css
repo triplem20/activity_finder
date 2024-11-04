@@ -1,5 +1,7 @@
 body, html {
   background-color: #EBECF0;
+  background-image: url("../images/background.jpg");
+  background-size: cover;
 }
 
 img{
