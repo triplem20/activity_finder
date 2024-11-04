@@ -36,7 +36,7 @@ img{
 
 
   #activityList {
-    height: 78vh;  
+    height: 76.5vh;  
     overflow-y: scroll;  
     padding: 25 10px;
     border-radius: 15px;
@@ -152,12 +152,11 @@ display: inline-block;
   position: absolute;
   top: 55px;
   right: 190px;
-
   padding: 5px;
   font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
   font-weight: bold;
   font-size: 20px;
-  color:#312c2c;
+  color:#534c4c;
 }
 
 

@@ -2,6 +2,10 @@ body, html {
   background-color: #EBECF0;
 }
 
+img{
+  width: 20px;
+}
+
 body, p, input, select, textarea, button {
   font-family: 'Montserrat', sans-serif;
   letter-spacing: -0.2px;
