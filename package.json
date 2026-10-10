@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "lrm-graphhopper": "^1.3.0"
+  }
+}

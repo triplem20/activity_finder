@@ -4,32 +4,32 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Activity Finder</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&family=Newsreader:wght@500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../Stylesheets/login.css">
-    <link href='https://fonts.googleapis.com/css?family=Montserrat:700' rel='stylesheet' type='text/css'>
 </head>
-<body>
-    <main>
-        <figure>
-            <picture>
-                <img src="../images/activityfinder.png" alt="Activity Finder Logo">
-            </picture>
-        </figure>
+<body class="auth">
+    <main class="auth-card">
+        <img class="logo" src="../images/activityfinder.png" alt="Activity Finder Logo">
         <div class="headline">
-            <h2 class="text-headline">Activity Finder</h2>
-            <h3 class="text-subheadline">Login</h3>
+            <h2 class="text-headline">Welcome back</h2>
+            <p class="lede">Sign in to find what's happening near you.</p>
         </div>
         <form id="loginForm">
-            <span>
-                <label for="lemail" class="text-small-uppercase">Email</label>
-                <input class="text-body" id="lemail" type="email" required>
-            </span>
-            <span>
-                <label for="lpassword" class="text-small-uppercase">Password</label>
-                <input class="text-body" id="lpassword" type="password" required>
-            </span>
-            <input class="text-small-uppercase" id="submit" type="submit" value="Login">
-            <a class="forgot" href="#">Forgot Password?</a>
-            <a class="register" href="../HTMLS/registerpage.html">Register</a>
+            <label class="field">
+                <span class="text-small-uppercase">Email</span>
+                <input class="text-body" id="lemail" type="email" autocomplete="email" required>
+            </label>
+            <label class="field">
+                <span class="text-small-uppercase">Password</span>
+                <input class="text-body" id="lpassword" type="password" autocomplete="current-password" required>
+            </label>
+            <input id="submit" type="submit" value="Log in">
+            <div class="auth-links">
+                <a class="forgot" href="#">Forgot password?</a>
+                <a class="register" href="../HTMLS/registerpage.html">Create an account</a>
+            </div>
         </form>
     </main>
     <script type="module" src="../Scripts/firebase.js"></script>

@@ -4,31 +4,35 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Activity Finder</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&family=Newsreader:wght@500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../Stylesheets/login.css">
-    <link href='https://fonts.googleapis.com/css?family=Montserrat:700' rel='stylesheet' type='text/css'>
 </head>
-<body>
+<body class="auth">
+  <main class="auth-card">
+    <img class="logo" src="../images/activityfinder.png" alt="Activity Finder Logo">
+    <h1>Welcome back</h1>
+    <p class="lede">Sign in to find what's happening near you.</p>
 
-   <form id="loginForm">
-  
-    <div class="segment">
-      <h1>login</h1>
-    </div>
-    
-    
-    <label>
-      <input type="text" placeholder="Email Address" id="lemail"/>
-    </label>
-    <label>
-      <input type="password" placeholder="Password" id="lpassword"/>
-    </label>
+    <form id="loginForm">
+      <label class="field">
+        <span>Email</span>
+        <input type="text" placeholder="you@example.com" id="lemail" autocomplete="email"/>
+      </label>
+      <label class="field">
+        <span>Password</span>
+        <input type="password" placeholder="Password" id="lpassword" autocomplete="current-password"/>
+      </label>
 
-    <a class="register" href="../HTMLS/registerpage.html">Register</a>
+      <button class="primary red" type="submit">Log in</button>
 
-    <button class="red" type="submit"><i class="icon ion-md-lock"></i> Log in</button>
-    
-    
-  </form>
+      <div class="auth-links">
+        <span></span>
+        <a class="register" href="../HTMLS/registerpage.html">Create an account</a>
+      </div>
+    </form>
+  </main>
   <script type="module" src="../Scripts/firebase.js"></script>
 </body>
 </html>

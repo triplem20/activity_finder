@@ -1,594 +1,411 @@
-let map = L.map('map').setView([51.505, -0.09], 13);
+/* ACTIVITY FINDER: map, search, nearby places and user activities */
 
-// Add the OpenStreetMap tiles
+// The Foursquare key lives on the server (see api/places.js), never in this file.
+// VS Code Live Server (ports 5500-5502) has no /api folder, so while developing there we call the Node dev server (node server.js) on port 3000.
+const LIVE_SERVER = ['localhost', '127.0.0.1'].includes(location.hostname) && ['5500', '5501', '5502'].includes(location.port);
+const PLACES_ENDPOINT = LIVE_SERVER ? 'http://localhost:3000/api/places' : '/api/places';
+const NOMINATIM = 'https://nominatim.openstreetmap.org';
+const STORAGE_KEY = 'af_user_activities';
+
+const map = L.map('map').setView([51.505, -0.09], 13);
+
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 }).addTo(map);
 
-// Variables to store marker and circle for user's location
-let marker, circle;
-let activityMarkers = []; 
-let routingControl; 
+/* ---------- icons ---------- */
+const SHADOW = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.3.1/images/marker-shadow.png';
+function makeIcon(url, size, anchor, popupAnchor) {
+    const opts = { iconUrl: url, iconSize: size, iconAnchor: anchor, shadowUrl: SHADOW, shadowSize: [41, 41] };
+    if (popupAnchor) opts.popupAnchor = popupAnchor;
+    return L.icon(opts);
+}
+const restaurantIcon = makeIcon('../images/resturanticon.png', [35, 45], [15, 41], [1, -34]);
+const sportsIcon = makeIcon('../images/sportsicon.png', [30, 41], [15, 41], [1, -34]);
+const eventIcon = makeIcon('../images/eventsicon.png', [30, 41], [15, 41], [1, -34]);
+const userActivityIcon = makeIcon('../images/useractivity.png', [30, 41], [15, 41], [1, -34]);
+const adventureIcon = makeIcon('../images/tourism.png', [32, 32], [16, 32]);
+const relaxIcon = makeIcon('../images/exercise.png', [32, 32], [16, 32]);
+const creativeIcon = makeIcon('../images/design-thinking.png', [32, 32], [16, 32]);
+const socialRomanticIcon = makeIcon('../images/group.png', [32, 32], [16, 32]);
+const energeticIcon = makeIcon('../images/energy-drink.png', [32, 32], [16, 32]);
+const intellectualPlayfulIcon = makeIcon('../images/intellectual-property.png', [32, 32], [16, 32]);
+const natureFestiveIcon = makeIcon('../images/forest.png', [32, 32], [16, 32]);
 
-// Custom icons for restaurants, sports, events, and user-added activities
-const restaurantIcon = L.icon({
-    iconUrl: '../images/resturanticon.png',  
-    iconSize: [35, 45],
-    iconAnchor: [15, 41],
-    popupAnchor: [1, -34],
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.3.1/images/marker-shadow.png',
-    shadowSize: [41, 41]
-});
+/* Each filter / mood maps to an icon and a real search term for Foursquare.
+   "libary" is kept because ActivityFinder.html uses data-type="libary". */
+const TYPES = {
+    restaurant: { icon: restaurantIcon, query: 'restaurant' },
+    sports: { icon: sportsIcon, query: 'sports' },
+    events: { icon: eventIcon, query: 'events' },
+    event: { icon: eventIcon, query: 'events' },
+    adventure: { icon: adventureIcon, query: 'hiking' },
+    relax: { icon: relaxIcon, query: 'spa' },
+    creative: { icon: creativeIcon, query: 'art gallery' },
+    social: { icon: socialRomanticIcon, query: 'bar' },
+    energetic: { icon: energeticIcon, query: 'gym' },
+    libary: { icon: intellectualPlayfulIcon, query: 'library' },
+    library: { icon: intellectualPlayfulIcon, query: 'library' },
+    nature: { icon: natureFestiveIcon, query: 'park' }
+};
 
-const sportsIcon = L.icon({
-    iconUrl: '../images/sportsicon.png',  
-    iconSize: [30, 41],
-    iconAnchor: [15, 41],
-    popupAnchor: [1, -34],
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.3.1/images/marker-shadow.png',
-    shadowSize: [41, 41]
-});
+/* ---------- state ---------- */
+let userMarker = null, userCircle = null;
+let userPos = null;                       // the user's real position, once known
+let activeCenter = map.getCenter();       // where searches are centred (user, or a searched place)
+let currentType = 'restaurant';
+let locationNotice = '';                  // shown above the list when we could not use the user's location
+let searchMarker = null, tempMarker = null, routingControl = null;
+let resultMarkers = [];
+const userActivities = [];                // { marker, data } for activities users add
 
-const eventIcon = L.icon({
-    iconUrl: '../images/eventsicon.png', 
-    iconSize: [30, 41],
-    iconAnchor: [15, 41],
-    popupAnchor: [1, -34],
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.3.1/images/marker-shadow.png',
-    shadowSize: [41, 41]
-});
+/* ---------- small helpers ---------- */
+const $ = id => document.getElementById(id);
 
-const userActivityIcon = L.icon({
-    iconUrl: '../images/useractivity.png',  
-    iconSize: [30, 41],
-    iconAnchor: [15, 41],
-    popupAnchor: [1, -34],
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.3.1/images/marker-shadow.png',
-    shadowSize: [41, 41]
-});
-const adventureIcon = L.icon({
-    iconUrl: '../images/tourism.png', 
-    iconSize: [32, 32], 
-    iconAnchor: [16, 32], 
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.3.1/images/marker-shadow.png',
-    shadowSize: [41, 41]
-});
+function el(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined && text !== null) node.textContent = text;   // textContent: no HTML injection
+    return node;
+}
 
-const relaxIcon = L.icon({
-    iconUrl: '../images/exercise.png', 
-    iconSize: [32, 32],
-    iconAnchor: [16, 32],
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.3.1/images/marker-shadow.png',
-    shadowSize: [41, 41]
-});
+function popupFor(title, subtitle) {
+    const box = el('div');
+    box.append(el('strong', null, title));
+    if (subtitle) { box.append(el('br'), document.createTextNode(subtitle)); }
+    return box;
+}
 
-const creativeIcon = L.icon({
-    iconUrl: '../images/design-thinking.png', 
-    iconSize: [32, 32],
-    iconAnchor: [16, 32],
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.3.1/images/marker-shadow.png',
-    shadowSize: [41, 41]
-});
+function showLoading(on) { $('loadingIndicator').style.display = on ? 'block' : 'none'; }
 
-const socialRomanticIcon = L.icon({
-    iconUrl: '../images/group.png', // You can choose a more fitting icon if needed
-    iconSize: [32, 32],
-    iconAnchor: [16, 32],
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.3.1/images/marker-shadow.png',
-    shadowSize: [41, 41]
-});
+function setStatus(text) {
+    let status = $('listStatus');
+    if (!status) {
+        status = el('p', 'empty-state');
+        status.id = 'listStatus';
+        $('activityList').before(status);
+    }
+    status.textContent = text;
+    status.style.display = text ? 'block' : 'none';
+}
 
-const energeticIcon = L.icon({
-    iconUrl: '../images/energy-drink.png', 
-    iconSize: [32, 32],
-    iconAnchor: [16, 32],
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.3.1/images/marker-shadow.png',
-    shadowSize: [41, 41]
-});
+function calculateDistance(lat1, lon1, lat2, lon2) {   // Haversine, km
+    const R = 6371, rad = Math.PI / 180;
+    const dLat = (lat2 - lat1) * rad, dLon = (lon2 - lon1) * rad;
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * rad) * Math.cos(lat2 * rad) * Math.sin(dLon / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 
-const intellectualPlayfulIcon = L.icon({
-    iconUrl: '../images/intellectual-property.png', 
-    iconSize: [32, 32],
-    iconAnchor: [16, 32],
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.3.1/images/marker-shadow.png',
-    shadowSize: [41, 41]
-});
+/* ---------- geocoding ---------- */
+const COORD_RE = /^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$/;
 
-const natureFestiveIcon = L.icon({
-    iconUrl: '../images/forest.png', 
-    iconSize: [32, 32],
-    iconAnchor: [16, 32],
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.3.1/images/marker-shadow.png',
-    shadowSize: [41, 41]
-});
+// Accepts "lat,lng" (no lookup needed) or an address (Nominatim). Returns {lat,lng,label} or null.
+async function geocode(text) {
+    const m = COORD_RE.exec(text);
+    if (m) {
+        const lat = +m[1], lng = +m[2];
+        return (Math.abs(lat) <= 90 && Math.abs(lng) <= 180) ? { lat, lng, label: text.trim() } : null;
+    }
+    const res = await fetch(`${NOMINATIM}/search?q=${encodeURIComponent(text)}&format=json&limit=1`);
+    if (!res.ok) throw new Error('Geocoding failed');
+    const data = await res.json();
+    return data.length ? { lat: +data[0].lat, lng: +data[0].lon, label: data[0].display_name } : null;
+}
 
+async function detectCity(lat, lng) {
+    try {
+        const res = await fetch(`${NOMINATIM}/reverse?lat=${lat}&lon=${lng}&format=json`);
+        const data = await res.json();
+        const a = data.address || {};
+        const city = a.city || a.town || a.village || a.municipality || a.county || a.state;
+        if (!city) return;
+        window.currentCity = city;
+        // firebase.js listens for this and saves it to the user's profile (see notes)
+        window.dispatchEvent(new CustomEvent('af:city', { detail: { city } }));
+    } catch (err) {
+        console.error('Reverse geocoding error:', err);
+    }
+}
 
-// Function to locate user
-function locateUser(activityType = "restaurant") {
-    navigator.geolocation.getCurrentPosition(function (pos) {
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-        const accuracy = pos.coords.accuracy;
+/* ---------- user location ---------- */
+function locateUser() {
+    const fallback = message => {
+        activeCenter = map.getCenter();
+        locationNotice = message;
+        setStatus(message);
+        fetchActivities(activeCenter, currentType);
+    };
+    if (!navigator.geolocation) { fallback('Location is not available here. Showing the map area instead.'); return; }
 
-        if (marker) {
-            map.removeLayer(marker);
-            map.removeLayer(circle);
-        }
+    navigator.geolocation.getCurrentPosition(pos => {
+        const { latitude: lat, longitude: lng, accuracy } = pos.coords;
+        userPos = { lat, lng };
+        activeCenter = userPos;
+        locationNotice = '';
 
-        // Mark user's location
-        marker = L.marker([lat, lng]).addTo(map).bindPopup("You are here!").openPopup();
-        circle = L.circle([lat, lng], { radius: accuracy }).addTo(map);
+        if (userMarker) { map.removeLayer(userMarker); map.removeLayer(userCircle); }
+        userMarker = L.marker([lat, lng]).addTo(map).bindPopup('You are here!').openPopup();
+        userCircle = L.circle([lat, lng], { radius: accuracy }).addTo(map);
         map.setView([lat, lng], 14);
 
-        // Display the city name based on location
-        getCityFromCoordinates(lat, lng);
-
-        // Fetch nearby activities based on the selected activity type
-        fetchActivities(lat, lng, activityType);
-    }, function (err) {
-        alert("Could not get your location.");
-    });
-}
-function getCityFromCoordinates(lat, lng) {
-    const geocodeUrl = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`;
-
-    fetch(geocodeUrl)
-        .then(response => response.json())
-        .then(data => {
-            if (data && data.address && data.address.city) {
-                const cityName = data.address.city;
-                displayCityName(cityName);
-                saveCityToFirebase(cityName);  
-                console.log("City found:", cityName);// Save city to Firebase
-            } else {
-                console.log("City not found for the location.");
-            }
-        })
-        .catch(error => console.error("Geocoding error:", error));
+        detectCity(lat, lng);
+        fetchActivities(activeCenter, currentType);
+    }, () => fallback('Could not get your location. Showing the map area instead.'),
+    { timeout: 10000, maximumAge: 60000 });
 }
 
-function saveCityToFirebase(city) {
-    const user = auth.currentUser;
-    if (user) {
-        const userRef = ref(database, 'users/' + user.uid);
-        update(userRef, { city: city })
-            .then(() => console.log("City updated in Firebase"))
-            .catch(error => console.error("Error updating city:", error));
+/* ---------- nearby places ---------- */
+let fetchToken = 0, fetchController = null;
+
+function normalizePlace(p) {
+    // Works with the current Foursquare shape (latitude/longitude) and the old one (geocodes.main)
+    const lat = p.latitude ?? p.geocodes?.main?.latitude;
+    const lng = p.longitude ?? p.geocodes?.main?.longitude;
+    if (typeof lat !== 'number' || typeof lng !== 'number') return null;
+    return {
+        name: p.name || 'Unknown',
+        lat, lng,
+        category: p.categories?.[0]?.name || '',
+        address: p.location?.formatted_address || p.location?.address || ''
+    };
+}
+
+async function fetchActivities(center, type = currentType) {
+    const cfg = TYPES[type] || TYPES.restaurant;
+    if (fetchController) fetchController.abort();          // a newer request replaces the old one
+    fetchController = new AbortController();
+    const token = ++fetchToken;
+    showLoading(true);
+
+    try {
+        const url = `${PLACES_ENDPOINT}?ll=${center.lat},${center.lng}&query=${encodeURIComponent(cfg.query)}&limit=20`;
+        const res = await fetch(url, { signal: fetchController.signal });
+        if (!res.ok) throw new Error(`Places request failed (${res.status})`);
+        const data = await res.json();
+        if (token !== fetchToken) return;
+        const places = (data.results || []).map(normalizePlace).filter(Boolean);
+        renderResults(places, center, type);
+    } catch (err) {
+        if (err.name === 'AbortError') return;
+        console.error('Error fetching activities:', err);
+        if (token === fetchToken) setStatus('Could not load activities right now. Please try again.');
+    } finally {
+        if (token === fetchToken) showLoading(false);
     }
 }
 
+function renderResults(places, center, type) {
+    resultMarkers.forEach(m => map.removeLayer(m));
+    resultMarkers = [];
+    const list = $('activityList');
+    list.replaceChildren();
 
-function displayCityName(city) {
-    const cityElement = document.getElementById("cityName");
-    console.log("Displaying city:", city);
-    if (cityElement) {
-        cityElement.textContent = `City: ${city}`;
-    } else {
-        console.warn("City name element not found.");
-    }
-}
+    if (!places.length) { setStatus('No activities found nearby.'); return; }
+    setStatus(locationNotice);
 
-let markers = [];
+    places.forEach(p => { p.distance = calculateDistance(center.lat, center.lng, p.lat, p.lng); });
+    places.sort((a, b) => a.distance - b.distance);
 
-// Function to fetch activities based on type (food, parks, etc.)
-function fetchActivities(lat, lng, type) {
-    const limit = 20; // Number of results to fetch
-    const apiUrl = `https://api.foursquare.com/v3/places/search?ll=${lat},${lng}&query=${type}&limit=${limit}`;
+    const icon = (TYPES[type] || {}).icon || userActivityIcon;
 
-    fetch(apiUrl, {
-        method: 'GET',
-        headers: {
-            'Accept': 'application/json',
-            'Authorization': 'fsq3RXOtK8AviEExxN8VGncz3prjLBomD5itI1dxi89dETs=' // Foursquare API Key
-        }
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`Error fetching activities: ${response.statusText}`);
-        }
-        return response.json();
-    })
-    .then(data => {
-        console.log(data); // Inspect the response structure
-        const activities = data.results || []; // API response structure
-        if (activities.length > 1) {
-            displayActivities(activities, type); 
-        } else {
-            console.warn("Only one or no activities found.");
-        }
-    })
-    .catch(error => {
-        console.error('Error fetching activities:', error);
-    });
+    places.forEach(p => {
+        const marker = L.marker([p.lat, p.lng], { icon }).addTo(map);
+        marker.bindPopup(popupFor(p.name, p.category || type));
+        resultMarkers.push(marker);
 
-   // Get mood elements and attach click event listeners
-document.querySelectorAll('li[data-type]').forEach(mood => {
-    mood.addEventListener('click', () => {
-        const type = mood.getAttribute('data-type'); // Get the mood type
-        const userLat = marker.getLatLng().lat;
-        const userLng = marker.getLatLng().lng;
-        
-        fetchActivities(userLat, userLng, type); 
-    });
-});
+        const item = el('div', 'activity-item');
+        const img = el('img', 'activity-img');
+        img.src = icon.options.iconUrl;
+        img.alt = p.name;
 
-    
-}
+        const info = el('div', 'activity-info');
+        info.append(el('h3', null, p.name));
+        info.append(el('p', null, [p.category, `${p.distance.toFixed(1)} km away`].filter(Boolean).join(' · ')));
+        if (p.address) info.append(el('p', null, p.address));
 
-// Function to display activities on the map
-function displayActivities(activities, type) {
-    markers.forEach(marker => marker.remove()); // Clear existing markers
-    markers = []; // Reset markers array
-
-    if (!activities || activities.length === 0) {
-        console.error("No activities found.");
-        return;
-    }
-
-    activities.forEach(activity => {
-        const name = activity.name || 'Unknown';
-        const lat = activity.geocodes?.main?.latitude;
-        const lng = activity.geocodes?.main?.longitude;
-
-        // Choose the icon based on activity type
-        const iconType = 
-            type === "restaurant" ? restaurantIcon :
-            type === "sports" ? sportsIcon :
-            type === "events" ? eventIcon :
-            activity.type === "adventure" ? adventureIcon :
-            activity.type === "relax" ? relaxIcon :
-            activity.type === "creative" ? creativeIcon :
-            activity.type === "social" || activity.type === "romantic" ? socialRomanticIcon : 
-            activity.type === "intellectual" || activity.type === "playful" ? intellectualPlayfulIcon : 
-            activity.type === "nature" || activity.type === "festive" ? natureFestiveIcon : 
-            userActivityIcon; 
-
-        if (lat !== undefined && lng !== undefined) {
-            const marker = L.marker([lat, lng], { icon: iconType }).addTo(map);
-            marker.bindPopup(`<b>${name}</b><br>${type}`);
-            markers.push(marker);
-        } else {
-            console.error(`Missing or invalid coordinates for activity: ${name}`);
-        }
-    });
-
-    const activityList = document.getElementById("activityList");
-    activityList.innerHTML = ""; // Clear the previous list
-    clearMarkers(); // Remove previous activity 
-
-    // User's current location
-    const userLat = marker.getLatLng().lat;
-    const userLng = marker.getLatLng().lng;
-
-    // Update activity list without limit
-    updateActivityList(activities, userLat, userLng, type);
-}
-
-
-
-
-function updateActivityList(activities, userLat, userLng, type) {
-    const activityList = document.getElementById("activityList");
-    activityList.innerHTML = ""; 
-
-    activities.forEach(activity => {
-        const name = activity.name || 'Unknown';
-        const lat = activity.geocodes?.main?.latitude;
-        const lng = activity.geocodes?.main?.longitude;
-
-        const distance = calculateDistance(userLat, userLng, lat, lng).toFixed(2);
-        const rating = (Math.random() * (5 - 3) + 3).toFixed(1);
-
-        // Choose icon based on type
-        const iconType = 
-            type === "restaurant" ? restaurantIcon :
-            type === "sports" ? sportsIcon :
-            type === "events" ? eventIcon :
-            type === "adventure" ? adventureIcon :
-            type === "relax" ? relaxIcon :
-            type === "creative" ? creativeIcon :
-            type === "social" ? socialRomanticIcon:
-            type === "energetic" ? energeticIcon :
-            type === "libary" ? intellectualPlayfulIcon :
-            type === "nature" ? natureFestiveIcon :
-            defaultActivityIcon; 
-        
-        const activityImage = iconType.options.iconUrl;
-
-        // Create a new list item for each activity
-        const activityItem = document.createElement("div");
-        activityItem.className = "activity-item";
-        activityItem.innerHTML = 
-            `<img src="${activityImage}" alt="${name}" class="activity-img">
-            <div class="activity-info">
-                <h3>${name}</h3>
-                <p>Rating: ${rating}<span class="star"> ★</span></p>
-                <p>Distance: ${distance} km</p>
-                <button class="route-button" data-lat="${lat}" data-lng="${lng}">Get Directions</button>
-            </div>`;
-        activityList.appendChild(activityItem);
-
-        // Add route button functionality
-        activityItem.querySelector(".route-button").addEventListener("click", () => {
-            const destination = L.latLng(lat, lng);
-            drawRoute(marker.getLatLng(), destination);
+        const route = el('button', 'route-button', 'Get directions');
+        route.type = 'button';
+        route.dataset.lat = p.lat;
+        route.dataset.lng = p.lng;
+        route.addEventListener('click', e => {
+            e.stopPropagation();
+            drawRoute(userPos || center, { lat: p.lat, lng: p.lng });
         });
+        info.append(route);
+
+        item.append(img, info);
+        item.addEventListener('click', () => { map.setView([p.lat, p.lng], 16); marker.openPopup(); });
+        list.append(item);
     });
-
-    // Handle no activities found case
-    if (activities.length === 0) {
-        const noActivitiesItem = document.createElement("div");
-        noActivitiesItem.textContent = "No activities found.";
-        alert("No Nearby Activities found :(")
-        activityList.appendChild(noActivitiesItem);
-    }
 }
 
-
-
-
-
-
-
-
-//  (Haversine formula)
-function calculateDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371; // Radius of the Earth in km
-    const dLat = (lat2 - lat1) * (Math.PI / 180);
-    const dLon = (lon2 - lon1) * (Math.PI / 180);
-    const a = 
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * 
-        Math.sin(dLon / 2) * Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    const distance = R * c; // Distance in km
-    return distance;
-}
-
-// Function to clear existing markers
-function clearMarkers() {
-    activityMarkers.forEach(({ marker }) => {
-        map.removeLayer(marker);
-    });
-    activityMarkers = [];
-}
-
-
-// Function to draw route using Leaflet Routing Machine
+/* ---------- routing ---------- */
 function drawRoute(start, end) {
-    
-    if (routingControl) {
-        map.removeControl(routingControl);
-    }
-
-    // Create a new routing control using the OSRM service
+    if (routingControl) map.removeControl(routingControl);
     routingControl = L.Routing.control({
-        waypoints: [
-            L.latLng(start.lat, start.lng),
-            L.latLng(end.lat, end.lng)
-        ],
+        waypoints: [L.latLng(start.lat, start.lng), L.latLng(end.lat, end.lng)],
         routeWhileDragging: true,
-        createMarker: function() { return null; }, // Disable default markers
-        router: L.Routing.osrmv1({
-            serviceUrl: 'https://router.project-osrm.org/route/v1',
-            timeout: 10000 
-    
-        }),
+        createMarker: () => null,
+        router: L.Routing.osrmv1({ serviceUrl: 'https://router.project-osrm.org/route/v1', timeout: 10000 }),
         showAlternatives: true,
         addWaypoints: false
     }).addTo(map);
-
-   
-    document.addEventListener('click', function (event) {
-        const routingContainer = document.querySelector('.leaflet-routing-container');
-        
-      
-    });
 }
 
+/* ---------- filters and moods ---------- */
+const FILTERS = { restaurantsFilter: 'restaurant', sportsFilter: 'sports', eventsFilter: 'events' };
 
-
-
-
-// Toggle the marathon-specific fields
-document.getElementById('activityType').addEventListener('change', function() {
-    const marathonPoints = document.getElementById('marathonPoints');
-    if (this.value === 'marathon') {
-        marathonPoints.style.display = 'block';
-    } else {
-        marathonPoints.style.display = 'none';
-    }
-});
-
-
-document.getElementById('addActivityBtn').addEventListener('click', function() {
-    document.getElementById('activityFormModal').style.display = 'block';
-});
-
-// Close the modal
-document.querySelector('.close').onclick = function() {
-    document.getElementById('activityFormModal').style.display = 'none';
-};
-
-// Add location by picking on the map
-let tempMarker = null; // Marker for picking locations
-
-document.getElementById('pickLocationBtn').addEventListener('click', function() {
-    alert("Click on the map to select a location.");
-    map.once('click', function(e) {
-        if (tempMarker) {
-            map.removeLayer(tempMarker);
-        }
-        tempMarker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(map);
-        document.getElementById('activityLocation').value = `${e.latlng.lat},${e.latlng.lng}`;
-    });
-});
-
-document.getElementById('pickStartBtn').addEventListener('click', function() {
-    alert("Click on the map to select the start location.");
-    map.once('click', function(e) {
-        if (tempMarker) {
-            map.removeLayer(tempMarker);
-        }
-        tempMarker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(map);
-        document.getElementById('startLocation').value = `${e.latlng.lat},${e.latlng.lng}`;
-    });
-});
-
-document.getElementById('pickEndBtn').addEventListener('click', function() {
-    alert("Click on the map to select the end location.");
-    map.once('click', function(e) {
-        if (tempMarker) {
-            map.removeLayer(tempMarker);
-        }
-        tempMarker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(map);
-        document.getElementById('endLocation').value = `${e.latlng.lat},${e.latlng.lng}`;
-    });
-});
-
-// Handle form submission and add activity to the map
-document.getElementById('activityForm').onsubmit = function(event) {
-    event.preventDefault();
-    
-    const activityName = document.getElementById('activityName').value;
-    const activityType = document.getElementById('activityType').value;
-    const activityLocation = document.getElementById('activityLocation').value;
-
-    let icon = userActivityIcon;
-
-    if (activityType === 'restaurant') {
-        icon =userActivityIcon;
-    } else if (activityType === 'sports') {
-        icon = userActivityIcon;
-    } else if (activityType === 'event') {
-        icon = userActivityIcon;
-    }
-
-    geocodeAndAddToMap(activityLocation, activityName, icon, activityType);
-
-    document.getElementById('activityFormModal').style.display = 'none';
-};
-
-
-
-
-
-function geocodeAndAddToMap(location, name, icon, type) {
-    const geocodeUrl = `https://nominatim.openstreetmap.org/search?q=${location}&format=json&limit=1`;
-
-    fetch(geocodeUrl)
-        .then(response => response.json())
-        .then(data => {
-            if (data.length > 0) {
-                const lat = data[0].lat;
-                const lng = data[0].lon;
-
-                const newMarker = L.marker([lat, lng], { icon: icon }).addTo(map)
-                    .bindPopup(`<strong>${name}</strong><br>Type: ${type}<br><button class="remove-button">Remove</button>`)
-                    .openPopup();
-
-                activityMarkers.push({ marker: newMarker, type });
-
-                newMarker.on('popupopen', function() {
-                    const popupContent = newMarker.getPopup().getContent();
-                    const tempDiv = document.createElement('div');
-                    tempDiv.innerHTML = popupContent;
-
-                    const removeButton = tempDiv.querySelector('.remove-button');
-                    if (removeButton) {
-                        removeButton.onclick = () => removeUserActivity(newMarker);
-                    }
-
-                    newMarker.setPopupContent(tempDiv.innerHTML);
-                });
-            } else {
-                alert("Location not found");
-            }
-        })
-        .catch(error => console.error("Geocoding error:", error));
+function setActiveFilter(type) {
+    Object.entries(FILTERS).forEach(([id, t]) => $(id).classList.toggle('active', t === type));
 }
-
-
-function removeUserActivity(marker) {
-    
-    map.removeLayer(marker);
-
-    // Find the index of the marker in activityMarkers array
-    const index = activityMarkers.findIndex(activity => activity.marker === marker);
-    if (index !== -1) {
-        // Remove from the markers array
-        activityMarkers.splice(index, 1);
-    }
-
-    
-  
-    marker.closePopup();
-}
-
-// Map search functionality
-
-document.getElementById('mapSearchBtn').addEventListener('click', function() {
-    const query = document.getElementById('mapSearchInput').value;
-
-    if (query) {
-        const geocodeUrl =`https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`;
-
-        fetch(geocodeUrl)
-            .then(response => response.json())
-            .then(data => {
-                if (data.length > 0) {
-                    const lat = data[0].lat;
-                    const lng = data[0].lon;
-
-                    // Move map view to the new location
-                    map.setView([lat, lng], 14);
-                    
-                    // Add marker for the searched location
-                    const searchMarker = L.marker([lat, lng]).addTo(map)
-                        .bindPopup(`<strong>${data[0].display_name}</strong>`)
-                        .openPopup();
-
-                  
-                    fetchActivities(lat, lng, "restaurant"); 
-                } else {
-                    alert("Location not found");
-                }
-            })
-            .catch(error => console.error("Geocoding error:", error));
-    }
-});
-
-
-document.getElementById("restaurantsFilter").addEventListener("click", () => applyFilter("restaurant"));
-document.getElementById("sportsFilter").addEventListener("click", () => applyFilter("sports"));
-document.getElementById("eventsFilter").addEventListener("click", () => applyFilter("events"));
 
 function applyFilter(type) {
-    const userLat = marker.getLatLng().lat;
-    const userLng = marker.getLatLng().lng;
-
-   
-    clearMarkers();
-
- 
-    fetchActivities(userLat, userLng, type);
+    currentType = type;
+    setActiveFilter(type);
+    fetchActivities(activeCenter, type);       // user-added activities stay on the map
 }
 
+Object.entries(FILTERS).forEach(([id, type]) => $(id).addEventListener('click', () => applyFilter(type)));
 
-
-// Function to display filtered activities on the map
-function displayActivitiesOnMap(activities) {
-    activities.forEach(({ marker }) => {
-        marker.addTo(map);
+// Registered once, so one click means one request
+document.querySelectorAll('li[data-type]').forEach(li => {
+    li.addEventListener('click', () => {
+        currentType = li.dataset.type;
+        setActiveFilter(null);
+        fetchActivities(activeCenter, currentType);
+        $('dropdown').checked = false;         // close the mood menu
     });
+});
+
+/* ---------- search ---------- */
+async function runSearch() {
+    const query = $('mapSearchInput').value.trim();
+    if (!query) return;
+    try {
+        const place = await geocode(query);
+        if (!place) { alert('Location not found'); return; }
+        if (searchMarker) map.removeLayer(searchMarker);
+        searchMarker = L.marker([place.lat, place.lng]).addTo(map).bindPopup(popupFor(place.label)).openPopup();
+        map.setView([place.lat, place.lng], 14);
+        activeCenter = { lat: place.lat, lng: place.lng };
+        locationNotice = '';                   // the user chose a place, so no notice is needed
+        fetchActivities(activeCenter, currentType);
+    } catch (err) {
+        console.error('Search error:', err);
+        alert('Search failed. Please try again.');
+    }
+}
+$('mapSearchBtn').addEventListener('click', runSearch);
+$('mapSearchInput').addEventListener('keydown', e => { if (e.key === 'Enter') runSearch(); });
+
+/* ---------- add-activity dialog ---------- */
+const modal = $('activityFormModal');
+const openModal = () => { modal.style.display = 'block'; };
+const closeModal = () => { modal.style.display = 'none'; };
+
+$('addActivityBtn').addEventListener('click', openModal);
+document.querySelector('.close').addEventListener('click', closeModal);
+modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+
+$('activityType').addEventListener('change', function () {
+    $('marathonPoints').style.display = this.value === 'marathon' ? 'block' : 'none';
+});
+
+// The dialog covers the map, so hide it while the user picks a point, then bring it back
+function pickOnMap(inputId, message) {
+    modal.style.display = 'none';
+    const hint = el('div', 'map-hint', `${message} (Esc to cancel)`);
+    document.body.append(hint);
+
+    const finish = () => {
+        hint.remove();
+        map.off('click', onClick);
+        document.removeEventListener('keydown', onKey);
+        openModal();
+    };
+    const onClick = e => {
+        if (tempMarker) map.removeLayer(tempMarker);
+        tempMarker = L.marker(e.latlng).addTo(map);
+        $(inputId).value = `${e.latlng.lat.toFixed(6)},${e.latlng.lng.toFixed(6)}`;
+        finish();
+    };
+    const onKey = e => { if (e.key === 'Escape') finish(); };
+    map.on('click', onClick);
+    document.addEventListener('keydown', onKey);
+}
+$('pickLocationBtn').addEventListener('click', () => pickOnMap('activityLocation', 'Click the map to choose the location'));
+$('pickStartBtn').addEventListener('click', () => pickOnMap('startLocation', 'Click the map to choose the start'));
+$('pickEndBtn').addEventListener('click', () => pickOnMap('endLocation', 'Click the map to choose the end'));
+
+/* ---------- user-added activities (kept in this browser) ---------- */
+function saveUserActivities() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(userActivities.map(a => a.data))); } catch (e) { /* storage unavailable */ }
 }
 
+function addUserActivity(data, { open = false, persist = true } = {}) {
+    const marker = L.marker([data.lat, data.lng], { icon: userActivityIcon }).addTo(map);
+    const content = popupFor(data.name, `Type: ${data.type}`);
+    const remove = el('button', 'remove-button', 'Remove');
+    remove.type = 'button';
+    remove.addEventListener('click', () => removeUserActivity(marker));   // listener stays on the real element
+    content.append(el('br'), remove);
+    marker.bindPopup(content);
+    if (open) marker.openPopup();
+    userActivities.push({ marker, data });
+    if (persist) saveUserActivities();
+}
 
+function removeUserActivity(marker) {
+    map.removeLayer(marker);
+    const i = userActivities.findIndex(a => a.marker === marker);
+    if (i !== -1) userActivities.splice(i, 1);
+    saveUserActivities();
+}
+
+function loadUserActivities() {
+    try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        saved.forEach(d => { if (typeof d.lat === 'number' && typeof d.lng === 'number') addUserActivity(d, { persist: false }); });
+    } catch (e) { /* ignore corrupt data */ }
+}
+
+$('activityForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const name = $('activityName').value.trim();
+    const type = $('activityType').value;
+    const submit = $('addActivity');
+    submit.disabled = true;
+
+    try {
+        const place = await geocode($('activityLocation').value.trim());
+        if (!place) { alert('Location not found'); return; }
+        addUserActivity({ name, type, lat: place.lat, lng: place.lng }, { open: true });
+
+        if (type === 'marathon') {
+            const start = await geocode($('startLocation').value.trim());
+            const end = await geocode($('endLocation').value.trim());
+            if (start && end) {
+                drawRoute(start, end);
+                map.fitBounds([[start.lat, start.lng], [end.lat, end.lng]], { padding: [40, 40] });
+            } else {
+                alert("Activity added, but the start or end location wasn't found so the route wasn't drawn.");
+            }
+        }
+
+        if (tempMarker) { map.removeLayer(tempMarker); tempMarker = null; }
+        $('activityForm').reset();
+        $('marathonPoints').style.display = 'none';
+        closeModal();
+    } catch (err) {
+        console.error('Add activity error:', err);
+        alert('Something went wrong. Please try again.');
+    } finally {
+        submit.disabled = false;
+    }
+});
+
+/* ---------- start ---------- */
+$('locate-btn').addEventListener('click', () => locateUser());   // arrow function: the click event is not passed in
+loadUserActivities();
 locateUser();
-
-document.getElementById("locate-btn").addEventListener("click", locateUser);
-
-
-
-

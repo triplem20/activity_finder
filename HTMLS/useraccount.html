@@ -4,27 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Activity Finder</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&family=Newsreader:wght@500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../Stylesheets/login.css">
-    <link href='https://fonts.googleapis.com/css?family=Montserrat:700' rel='stylesheet' type='text/css'>
-
-    
-   
-
 </head>
 <body>
 
-    
-    <div class="appbar">
-        <a href="../HTMLS/ActivityFinder.html"><h1>Activity Finder <img class="headicon" src="../images/activityfinder.png"></h1></a>
-        <button  title="Sign Out" id="signOutButton"><img src="../images/signout.png"></button>
-      </div>
-    
-     
+    <header class="appbar">
+        <a href="../HTMLS/ActivityFinder.html"><h1><img class="headicon" src="../images/activityfinder.png" alt=""> Activity Finder</h1></a>
+        <button title="Sign Out" id="signOutButton"><img src="../images/signout.png" alt="Sign out"></button>
+    </header>
 
     <div class="blog_post">
-        
+
         <div class="img_pod">
-          <img src="../images/activityfinder.png" alt="random image" id="accimg">
+          <img src="../images/activityfinder.png" alt="Profile" id="accimg">
         </div>
         <div class="container_copy">
             <div class="headline">
@@ -33,37 +28,30 @@
             </div>
             <div class="details">
                 <span>
-                    <strong class="text-small-uppercase">Email:</strong>
+                    <strong class="text-small-uppercase">Email</strong>
                     <p class="text-body" id="userEmaild">[user@example.com]</p>
                 </span>
                 <span>
-                    <strong class="text-small-uppercase">Name:</strong>
+                    <strong class="text-small-uppercase">Name</strong>
                     <p class="text-body" id="userNamed">[User's Name]</p>
                 </span>
                 <span>
-                    <strong class="text-small-uppercase">City:</strong>
-                    <p class="text-body" id="cityName">[User's City]</p> 
+                    <strong class="text-small-uppercase">City</strong>
+                    <p class="text-body" id="cityName">[User's City]</p>
                 </span>
-               
             </div>
-         <button class="btn_primary" id="edit-btn">Edit</button> 
-         <button  class="btn_primary"  id="saveButton" style="display:none;">Save Changes</button>
+            <button class="btn_primary" id="edit-btn">Edit</button>
+            <button class="btn_primary" id="saveButton" style="display:none;">Save Changes</button>
         </div>
-        
-      </div>
-    
 
-
-    
-
+    </div>
 
     <script type="module" src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js"></script>
     <script type="module" src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth.js"></script>
     <script type="module" src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js"></script>
     <script type="module" src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js"></script>
-    
+
     <script type="module" src="../Scripts/firebase.js"></script>
- 
 
 </body>
 </html>

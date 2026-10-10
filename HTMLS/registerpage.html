@@ -4,48 +4,45 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Activity Finder</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&family=Newsreader:wght@500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../Stylesheets/login.css">
-    <link href='https://fonts.googleapis.com/css?family=Montserrat:700' rel='stylesheet' type='text/css'>
-
-    
-
-
 </head>
-<body>
+<body class="auth">
+  <main class="auth-card">
+    <img class="logo" src="../images/activityfinder.png" alt="Activity Finder Logo">
+    <h1>Create an account</h1>
+    <p class="lede">A few details and you're in.</p>
 
-    
+    <form id="registerForm">
+      <label class="field">
+        <span>Username</span>
+        <input type="text" placeholder="Your name" id="username" autocomplete="username"/>
+      </label>
+      <label class="field">
+        <span>Email</span>
+        <input type="text" placeholder="you@example.com" id="email" autocomplete="email"/>
+      </label>
+      <label class="field">
+        <span>Password</span>
+        <input type="password" placeholder="Password" id="password" autocomplete="new-password"/>
+      </label>
 
-  <form id="registerForm">
-  
-    <div class="segment">
-      <h1>Register</h1>
-    </div>
-    
+      <button id="register-btn" class="primary red" type="submit">Register</button>
 
+      <div class="auth-links">
+        <span></span>
+        <a class="login" href="../HTMLS/loginpage.html">I already have an account</a>
+      </div>
+    </form>
+  </main>
 
-    <label>
-      <input type="text" placeholder="UserName" id="username"/>
-    </label>
-    <label>
-      <input type="text" placeholder="Email Address" id="email"/>
-    </label>
-    <label>
-      <input type="password" placeholder="Password" id="password"/>
-    </label>
+  <script type="module" src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js"></script>
+  <script type="module" src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth.js"></script>
+  <script type="module" src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js"></script>
+  <script type="module" src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js"></script>
 
-    <a class="login" href="../HTMLS/loginpage.html">login</a>
-    <button id="register-btn" class="red" type="submit"><i class="icon ion-md-lock"></i> Register</button>
-          
-         
-
-      
-        </form>
-
-
-      
-      <script type="module" src="../Scripts/firebase.js"></script>
-
-
-
+  <script type="module" src="../Scripts/firebase.js"></script>
 </body>
 </html>
