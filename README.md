@@ -1,8 +1,19 @@
-#Output
+# Output
+
+PS: The project is still incomplete.
+<img width="944" alt="image" src="https://github.com/user-attachments/assets/8835abaa-e758-4831-b1a1-a13eb52da94d">
+<img width="944" alt="image" src="https://github.com/user-attachments/assets/065b3fae-3e3d-494b-bcb7-2c1672545d4f">
+<img width="946" alt="image" src="https://github.com/user-attachments/assets/08114118-6026-4ec9-b6a0-f46e87423d55">
+<img width="944" alt="image" src="https://github.com/user-attachments/assets/7ec1bdbc-f503-4165-8a13-aacd5c20e5e2">
+<img width="887" alt="image" src="https://github.com/user-attachments/assets/46bd1d1c-7532-4df4-8eeb-d9a4d1a07d3f">
+<img width="934" alt="image" src="https://github.com/user-attachments/assets/f4692238-ef45-4b6b-8985-ed8f7656bb3b">
 
 
-<img width="948" alt="image" src="https://github.com/user-attachments/assets/5eb5a5c6-7f9a-488d-bea1-7e1074d508fb">
-<img width="947" alt="image" src="https://github.com/user-attachments/assets/10060962-7e03-41ad-b311-e1a12d0ac2f1">
-<img width="799" alt="image" src="https://github.com/user-attachments/assets/65529783-2a13-4163-a323-02ec80c16ca4">
+
+
+
+
+
+
 
 
