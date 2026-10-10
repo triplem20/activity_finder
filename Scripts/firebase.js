@@ -2,17 +2,14 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged , signOut} from "https://www.gstatic.com/firebasejs/9.0.0/firebase-auth.js";
 import { getDatabase, ref, set, update, get } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
 
-
-
-
-const firebaseConfig = {
-    apiKey: "AIzaSyAOw7Sa_qlc4k9ITwZmD-CTtSnyZeXs-jg",
-    authDomain: "activity-finder-a789b.firebaseapp.com",
-    projectId: "activity-finder-a789b",
-    storageBucket: "activity-finder-a789b.appspot.com",
-    messagingSenderId: "1005086000503",
-    appId: "1:1005086000503:web:91ebeeaa3a059a31a84d72"
-};
+const LIVE_SERVER = ['localhost', '127.0.0.1'].includes(location.hostname) && ['5500', '5501', '5502'].includes(location.port);
+const FIREBASE_CONFIG_ENDPOINT = LIVE_SERVER ? 'http://localhost:3000/api/firebase-config' : '/api/firebase-config';
+const configResponse = await fetch(FIREBASE_CONFIG_ENDPOINT);
+if (!configResponse.ok) {
+    const { error } = await configResponse.json();
+    throw new Error(error || `Firebase configuration request failed (${configResponse.status})`);
+}
+const firebaseConfig = await configResponse.json();
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
