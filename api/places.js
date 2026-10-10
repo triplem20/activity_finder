@@ -1,6 +1,3 @@
-// Vercel serverless function: /api/places
-// Keeps the Foursquare key on the server. Set FOURSQUARE_API_KEY in Vercel (Project > Settings > Environment Variables).
-// The key must be a Foursquare *Service Key* from developer.foursquare.com.
 
 module.exports = async (req, res) => {
   if (req.method !== 'GET') {
